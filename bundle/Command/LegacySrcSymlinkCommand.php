@@ -27,7 +27,6 @@ class LegacySrcSymlinkCommand extends ContainerAwareCommand
                     new InputArgument('src', InputArgument::OPTIONAL, 'The src directory for legacy files', 'src/legacy_files'),
                 )
             )
-            ->addOption('create', 'c', InputOption::VALUE_NONE, 'Create "src" directory structure if it does not exist')
             ->addOption('force', null, InputOption::VALUE_NONE, 'Force symlinking folders even if target already exists')
             ->setDescription('Installs legacy project settings and design files from "src" to corresponding folders in ezpublish_legacy/')
             ->setHelp(
@@ -49,7 +48,6 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $srcArg = rtrim($input->getArgument('src'), '/');
-        $create = (bool)$input->getOption('create');
         $force = (bool)$input->getOption('force');
 
         /**
@@ -58,11 +56,10 @@ EOT
         $filesystem = $this->getContainer()->get('filesystem');
 
         if (!$filesystem->exists($srcArg)) {
-            if (!$create) {
-                $output->writeln(<<<EOT
+            $output->writeln(<<<EOT
 Aborting: The src directory "$srcArg" does not exist.
 
-You can create the directory by running <info>ezpublish:legacy:symlink -c</info>, OR by creating the folders you need
+You can create the directory by running <info>ezpublish:legacy:init</info>, OR by creating the folders you need
 manually among the ones supported by this command:
 - $srcArg/design
 - $srcArg/settings/override
@@ -74,18 +71,7 @@ EOT
 , OutputInterface::VERBOSITY_QUIET
 );
 
-                return;
-            }
-
-            $filesystem->mkdir([
-                $srcArg,
-                "$srcArg/design",
-                "$srcArg/settings",
-                "$srcArg/settings/override",
-                "$srcArg/settings/siteaccess",
-            ]);
-
-            $output->writeln("<comment>Empty legacy src folder was created in '$srcArg'.</comment>");
+            return;
         }
 
         $symlinkFolderStr = implode(' ,', $this->linkSrcFolders($filesystem, $srcArg, $force, $output));
